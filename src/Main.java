@@ -19,7 +19,7 @@ public class Main {
                 System.out.println("7. 학생 정보 수정  8. 학생 정보 삭제");
                 System.out.println("9. 게시물 검색  10. 게시물 추가");
                 System.out.println("11. 게시물 삭제  12. 댓글 수정");
-                System.out.println("13. 댓글 삭제");
+                System.out.println("13. 댓글 삭제  14. 일정 검색");
 
 
                 System.out.println("99. 종료");
@@ -745,6 +745,43 @@ public class Main {
                         System.out.println("댓글 삭제 중 오류가 발생했습니다: " + e.getMessage());
                     }
                 }
+
+                else if (option == 14) { // 일정 검색
+                    System.out.println("\n--- 일정 검색 ---");
+                    scanner.nextLine();
+                    System.out.print("검색할 동아리명을 입력하세요: ");
+                    String clubName = scanner.nextLine();
+
+                    // 동아리명을 기준으로 일정 검색 쿼리
+                    String query = "SELECT s.일정id, s.일정명, s.내용, s.날짜, s.시간, c.동아리명 " +
+                            "FROM 일정 s " +
+                            "JOIN 동아리 c ON s.동아리id = c.동아리id " +
+                            "WHERE c.동아리명 LIKE ?";
+
+                    try (PreparedStatement pstmt = con.prepareStatement(query)) {
+                        pstmt.setString(1, "%" + clubName + "%");
+                        ResultSet rs = pstmt.executeQuery();
+
+                        boolean hasResults = false; // 검색 결과 확인용
+                        while (rs.next()) {
+                            hasResults = true;
+                            System.out.println("일정ID: " + rs.getInt("일정id"));
+                            System.out.println("일정명: " + rs.getString("일정명"));
+                            System.out.println("내용: " + rs.getString("내용"));
+                            System.out.println("날짜: " + rs.getDate("날짜"));
+                            System.out.println("시간: " + rs.getTime("시간"));
+                            System.out.println("동아리명: " + rs.getString("동아리명"));
+                            System.out.println("-------------------------");
+                        }
+
+                        if (!hasResults) {
+                            System.out.println("검색된 일정이 없습니다.");
+                        }
+                    } catch (SQLException e) {
+                        System.out.println("일정 검색 중 오류가 발생했습니다: " + e.getMessage());
+                    }
+                }
+
 
 
 
