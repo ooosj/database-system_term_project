@@ -20,7 +20,7 @@ public class Main {
                 System.out.println("9. 게시물 검색  10. 게시물 추가");
                 System.out.println("11. 게시물 수정  12. 게시물 삭제");
                 System.out.println("13. 댓글 수정  14. 댓글 삭제");
-                System.out.println("13. 일정 검색  14. 예산 삭제");
+                System.out.println("15. 일정 검색  16. 예산 검색");
 
                 System.out.println("99. 종료");
                 System.out.print("선택하세요: ");
@@ -841,6 +841,45 @@ public class Main {
                         System.out.println("일정 검색 중 오류가 발생했습니다: " + e.getMessage());
                     }
                 }
+
+                else if (option == 16) { // 예산 검색
+                    System.out.println("\n--- 예산 검색 ---");
+                    scanner.nextLine();
+                    System.out.print("검색할 동아리명을 입력하세요: ");
+                    String clubName = scanner.nextLine();
+
+                    // 예산 검색 쿼리
+                    String query = "SELECT e.예산id, e.비용, e.사용내역, e.작성일자, d.동아리명, i.일정명 " +
+                            "FROM 예산 e " +
+                            "JOIN 동아리 d ON e.동아리id = d.동아리id " +
+                            "LEFT JOIN 일정 i ON e.일정id = i.일정id " +
+                            "WHERE d.동아리명 = ?";
+
+                    try (PreparedStatement pstmt = con.prepareStatement(query)) {
+                        pstmt.setString(1, clubName); // 동아리명 설정
+
+                        ResultSet rs = pstmt.executeQuery();
+
+                        boolean hasResults = false;
+                        while (rs.next()) {
+                            hasResults = true;
+                            System.out.println("예산ID: " + rs.getInt("예산id"));
+                            System.out.println("동아리명: " + rs.getString("동아리명"));
+                            System.out.println("일정명: " + (rs.getString("일정명") == null ? "없음" : rs.getString("일정명")));
+                            System.out.println("비용: " + rs.getString("비용"));
+                            System.out.println("사용내역: " + rs.getString("사용내역"));
+                            System.out.println("작성일자: " + rs.getDate("작성일자"));
+                            System.out.println("-------------------------");
+                        }
+
+                        if (!hasResults) {
+                            System.out.println("해당 동아리에 대한 예산 정보가 없습니다.");
+                        }
+                    } catch (SQLException e) {
+                        System.out.println("예산 검색 중 오류가 발생했습니다: " + e.getMessage());
+                    }
+                }
+
 
 
 
