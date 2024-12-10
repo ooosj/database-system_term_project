@@ -155,7 +155,6 @@ public class Main {
                     }
                 }
 
-
                 else if (option == 4) {
                     System.out.println("\n--- 동아리 삭제 ---");
                     System.out.print("삭제할 동아리명을 입력하세요: ");
@@ -183,6 +182,7 @@ public class Main {
                     }
 
                 }
+
                 else if (option == 5) { // 학생 정보 검색
                     System.out.println("\n--- 학생 정보 검색 ---");
                     System.out.println("1. 이름으로 검색");
@@ -401,8 +401,6 @@ public class Main {
                     }
                 }
 
-
-
                 else if (option == 8) { // 학생 정보 삭제
                     System.out.println("\n--- 학생 정보 삭제 ---");
                     scanner.nextLine();
@@ -428,6 +426,168 @@ public class Main {
                         System.out.println("학생 정보 삭제가 취소되었습니다.");
                     }
                 }
+
+                else if (option == 9) { // 게시물 검색
+                    System.out.println("\n--- 게시물 검색 ---");
+                    System.out.println("1. 제목으로 검색");
+                    System.out.println("2. 작성자 이름으로 검색");
+                    System.out.print("선택하세요: ");
+                    int searchOption = scanner.nextInt();
+                    scanner.nextLine(); // 버퍼 비우기
+
+                    if (searchOption == 1) {
+                        System.out.print("검색할 제목을 입력하세요: ");
+                        String title = scanner.nextLine();
+                        String query = "SELECT 게시물id, 제목, 내용, 작성일자, 사용자id, 동아리id FROM 게시물 WHERE 제목 LIKE ?";
+                        try (PreparedStatement pstmt = con.prepareStatement(query)) {
+                            pstmt.setString(1, "%" + title + "%");
+                            ResultSet rs = pstmt.executeQuery();
+                            while (rs.next()) {
+                                System.out.println("게시물ID: " + rs.getInt("게시물id"));
+                                System.out.println("제목: " + rs.getString("제목"));
+                                System.out.println("내용: " + rs.getString("내용"));
+                                System.out.println("작성일자: " + rs.getDate("작성일자"));
+                                System.out.println("작성자ID: " + rs.getInt("사용자id"));
+                                System.out.println("동아리ID: " + rs.getInt("동아리id"));
+                                System.out.println("-------------------------");
+                            }
+                        }
+                    } else if (searchOption == 2) {
+                        System.out.print("검색할 작성자 이름을 입력하세요: ");
+                        String authorName = scanner.nextLine();
+                        String query = "SELECT b.게시물id, b.제목, b.내용, b.작성일자, b.동아리id, u.이름 AS 작성자 " +
+                                "FROM 게시물 b JOIN 사용자 u ON b.사용자id = u.사용자id " +
+                                "WHERE u.이름 LIKE ?";
+                        try (PreparedStatement pstmt = con.prepareStatement(query)) {
+                            pstmt.setString(1, "%" + authorName + "%");
+                            ResultSet rs = pstmt.executeQuery();
+                            while (rs.next()) {
+                                System.out.println("게시물ID: " + rs.getInt("게시물id"));
+                                System.out.println("제목: " + rs.getString("제목"));
+                                System.out.println("내용: " + rs.getString("내용"));
+                                System.out.println("작성일자: " + rs.getDate("작성일자"));
+                                System.out.println("작성자: " + rs.getString("작성자"));
+                                System.out.println("동아리ID: " + rs.getInt("동아리id"));
+                                System.out.println("-------------------------");
+                            }
+                        }
+                    }
+                }
+
+                else if (option == 10) { // 게시물 추가
+                    System.out.println("\n--- 게시물 추가 ---");
+                    scanner.nextLine(); // 버퍼 비우기
+
+                    System.out.print("게시물 제목을 입력하세요: ");
+                    String title = scanner.nextLine();
+
+                    System.out.print("게시물 내용을 입력하세요: ");
+                    String content = scanner.nextLine();
+
+                    System.out.print("동아리명을 입력하세요: ");
+                    String clubName = scanner.nextLine();
+
+                    System.out.print("작성자 이름을 입력하세요: ");
+                    String authorName = scanner.nextLine();
+
+                    // 동아리ID 가져오기
+                    Integer clubId = null;
+                    String clubQuery = "SELECT 동아리id FROM 동아리 WHERE 동아리명 = ?";
+                    try (PreparedStatement pstmt = con.prepareStatement(clubQuery)) {
+                        pstmt.setString(1, clubName);
+                        ResultSet rs = pstmt.executeQuery();
+                        if (rs.next()) {
+                            clubId = rs.getInt("동아리id");
+                        } else {
+                            System.out.println("입력한 동아리가 존재하지 않습니다. 처음으로 돌아갑니다.");
+                            continue;
+                        }
+                    }
+
+                    // 사용자ID 가져오기
+                    Integer userId = null;
+                    String userQuery = "SELECT 사용자id FROM 사용자 WHERE 이름 = ?";
+                    try (PreparedStatement pstmt = con.prepareStatement(userQuery)) {
+                        pstmt.setString(1, authorName);
+                        ResultSet rs = pstmt.executeQuery();
+                        if (rs.next()) {
+                            userId = rs.getInt("사용자id");
+                        } else {
+                            System.out.println("입력한 작성자가 존재하지 않습니다. 처음으로 돌아갑니다.");
+                            continue;
+                        }
+                    }
+
+                    // 게시물 추가
+                    String insertQuery = "INSERT INTO 게시물 (게시물유형, 제목, 내용, 동아리id, 작성일자, 사용자id) " +
+                            "VALUES (?, ?, ?, ?, NOW(), ?)";
+                    try (PreparedStatement pstmt = con.prepareStatement(insertQuery)) {
+                        pstmt.setInt(1, 1); // 게시물 유형은 기본값 1로 설정
+                        pstmt.setString(2, title);
+                        pstmt.setString(3, content);
+                        pstmt.setInt(4, clubId);
+                        pstmt.setInt(5, userId);
+
+                        int rowsInserted = pstmt.executeUpdate();
+                        if (rowsInserted > 0) {
+                            System.out.println("게시물이 성공적으로 추가되었습니다!");
+                        } else {
+                            System.out.println("게시물 추가에 실패했습니다.");
+                        }
+                    }
+                }
+
+                else if (option == 11) { // 게시물 삭제
+                    System.out.println("\n--- 게시물 삭제 ---");
+                    scanner.nextLine(); // 버퍼 비우기
+
+                    System.out.print("작성자 이름을 입력하세요: ");
+                    String authorName = scanner.nextLine();
+
+                    // 작성자ID 가져오기
+                    Integer userId = null;
+                    String userQuery = "SELECT 사용자id FROM 사용자 WHERE 이름 = ?";
+                    try (PreparedStatement pstmt = con.prepareStatement(userQuery)) {
+                        pstmt.setString(1, authorName);
+                        ResultSet rs = pstmt.executeQuery();
+                        if (rs.next()) {
+                            userId = rs.getInt("사용자id");
+                        } else {
+                            System.out.println("입력한 작성자가 존재하지 않습니다. 처음으로 돌아갑니다.");
+                            continue;
+                        }
+                    }
+
+                    // 작성자가 작성한 게시물 목록 출력
+                    String selectQuery = "SELECT 게시물id, 제목 FROM 게시물 WHERE 사용자id = ?";
+                    try (PreparedStatement pstmt = con.prepareStatement(selectQuery)) {
+                        pstmt.setInt(1, userId);
+                        ResultSet rs = pstmt.executeQuery();
+                        System.out.println("\n작성자가 작성한 게시물 목록:");
+                        while (rs.next()) {
+                            System.out.println("게시물ID: " + rs.getInt("게시물id") + ", 제목: " + rs.getString("제목"));
+                        }
+                    }
+
+                    // 삭제할 게시물ID 입력받기
+                    System.out.print("\n삭제할 게시물ID를 입력하세요: ");
+                    int postId = scanner.nextInt();
+                    scanner.nextLine(); // 버퍼 비우기
+
+                    // 게시물 삭제
+                    String deleteQuery = "DELETE FROM 게시물 WHERE 게시물id = ?";
+                    try (PreparedStatement pstmt = con.prepareStatement(deleteQuery)) {
+                        pstmt.setInt(1, postId);
+
+                        int rowsDeleted = pstmt.executeUpdate();
+                        if (rowsDeleted > 0) {
+                            System.out.println("게시물이 성공적으로 삭제되었습니다!");
+                        } else {
+                            System.out.println("삭제할 게시물이 존재하지 않습니다.");
+                        }
+                    }
+                }
+
 
 
 
