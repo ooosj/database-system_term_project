@@ -35,10 +35,11 @@ public class Main {
                     int searchOption = scanner.nextInt();
 
                     if (searchOption == 1) {
-                        System.out.print("검색할 동아리명을 입력하세요: ");
                         scanner.nextLine(); // 버퍼 비우기
+                        System.out.print("검색할 동아리명을 입력하세요: ");
+
                         String clubName = scanner.nextLine();
-                        String query = "SELECT * FROM 동아리 WHERE 이름 = '" + clubName + "'";
+                        String query = "SELECT * FROM 동아리 WHERE 동아리명 = '" + clubName + "'";
                         ResultSet rs = stmt.executeQuery(query);
 
                         System.out.println("\n[검색 결과]");
@@ -204,14 +205,19 @@ public class Main {
                         try (PreparedStatement pstmt = con.prepareStatement(query)) {
                             pstmt.setString(1, name);
                             ResultSet rs = pstmt.executeQuery();
+                            boolean hasResults = false;
                             System.out.println("-------------------------");
                             while (rs.next()) {
+                                hasResults = true;
                                 System.out.println("사용자ID: " + rs.getInt("사용자id"));
                                 System.out.println("이름: " + rs.getString("이름"));
                                 System.out.println("동아리명: " + rs.getString("동아리명")); // 동아리명 출력
                                 System.out.println("학번: " + rs.getString("학번"));
                                 System.out.println("권한: " + rs.getString("권한"));
                                 System.out.println("-------------------------");
+                            }
+                            if (!hasResults) {
+                                System.out.println("검색 결과가 없습니다.");
                             }
                         }
                     } else if (searchOption == 2) {
@@ -224,7 +230,9 @@ public class Main {
                         try (PreparedStatement pstmt = con.prepareStatement(query)) {
                             pstmt.setString(1, studentNumber);
                             ResultSet rs = pstmt.executeQuery();
+                            boolean hasResults = false;
                             while (rs.next()) {
+                                hasResults = true;
                                 System.out.println("사용자ID: " + rs.getInt("사용자id"));
                                 System.out.println("이름: " + rs.getString("이름"));
                                 System.out.println("동아리명: " + rs.getString("동아리명")); // 동아리명 출력
@@ -232,7 +240,11 @@ public class Main {
                                 System.out.println("권한: " + rs.getString("권한"));
                                 System.out.println("-------------------------");
                             }
+                            if (!hasResults) {
+                                System.out.println("검색 결과가 없습니다.");
+                            }
                         }
+
                     } else if (searchOption == 3) {
                         System.out.print("검색할 동아리명을 입력하세요: ");
                         String clubName = scanner.nextLine();
@@ -243,13 +255,18 @@ public class Main {
                         try (PreparedStatement pstmt = con.prepareStatement(query)) {
                             pstmt.setString(1, clubName);
                             ResultSet rs = pstmt.executeQuery();
+                            boolean hasResults = false;
                             while (rs.next()) {
+                                hasResults = true;
                                 System.out.println("사용자ID: " + rs.getInt("사용자id"));
                                 System.out.println("이름: " + rs.getString("이름"));
                                 System.out.println("동아리명: " + rs.getString("동아리명")); // 동아리명 출력
                                 System.out.println("학번: " + rs.getString("학번"));
                                 System.out.println("권한: " + rs.getString("권한"));
                                 System.out.println("-------------------------");
+                            }
+                            if (!hasResults) {
+                                System.out.println("검색 결과가 없습니다.");
                             }
                         }
                     } else {
@@ -453,16 +470,20 @@ public class Main {
                                 "JOIN 사용자 u ON b.사용자id = u.사용자id " +
                                 "JOIN 동아리 c ON b.동아리id = c.동아리id " +
                                 "WHERE u.이름 LIKE ?";
+                    } else {
+                        System.out.println("잘못된 선택입니다.");
+                        return;
                     }
 
                     try (PreparedStatement pstmt = con.prepareStatement(query)) {
-
                         String keyword = scanner.nextLine();
                         pstmt.setString(1, "%" + keyword + "%");
 
                         ResultSet rs = pstmt.executeQuery();
 
+                        boolean hasResults = false;
                         while (rs.next()) {
+                            hasResults = true;
                             int 게시물id = rs.getInt("게시물id");
                             System.out.println("게시물ID: " + 게시물id);
                             System.out.println("제목: " + rs.getString("제목"));
@@ -472,7 +493,7 @@ public class Main {
                             System.out.println("동아리명: " + rs.getString("동아리명"));
                             System.out.println("-------------------------");
 
-                            // 댓글 표시 (해당 게시물의 댓글만 표시)
+                            // 댓글 표시
                             System.out.println("=== 댓글 ===");
                             String commentQuery = "SELECT c.댓글id, c.내용, c.작성일자, u.이름 AS 작성자 " +
                                     "FROM 댓글 c " +
@@ -533,10 +554,15 @@ public class Main {
                                 }
                             }
                         }
+
+                        if (!hasResults) {
+                            System.out.println("검색 결과가 없습니다.");
+                        }
                     } catch (SQLException e) {
                         System.out.println("게시물 검색 중 오류가 발생했습니다: " + e.getMessage());
                     }
                 }
+
 
 
 
