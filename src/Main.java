@@ -18,9 +18,9 @@ public class Main {
                 System.out.println("5. 학생 정보 검색  6. 학생 추가");
                 System.out.println("7. 학생 정보 수정  8. 학생 정보 삭제");
                 System.out.println("9. 게시물 검색  10. 게시물 추가");
-                System.out.println("11. 게시물 삭제  12. 댓글 수정");
-                System.out.println("13. 댓글 삭제  14. 일정 검색");
-
+                System.out.println("11. 게시물 수정  12. 게시물 삭제");
+                System.out.println("13. 댓글 수정  14. 댓글 삭제");
+                System.out.println("13. 일정 검색  14. 예산 삭제");
 
                 System.out.println("99. 종료");
                 System.out.print("선택하세요: ");
@@ -603,7 +603,67 @@ public class Main {
                     }
                 }
 
-                else if (option == 11) { // 게시물 삭제
+                else if (option == 11) { // 게시물 수정
+                    System.out.println("\n--- 게시물 수정 ---");
+                    System.out.print("수정할 게시물의 ID를 입력하세요: ");
+                    int postId = scanner.nextInt();
+                    scanner.nextLine(); // 버퍼 비우기
+
+                    // 게시물 존재 여부 확인
+                    String checkQuery = "SELECT 게시물id, 제목, 내용, 작성일자 FROM 게시물 WHERE 게시물id = ?";
+                    try (PreparedStatement checkPstmt = con.prepareStatement(checkQuery)) {
+                        checkPstmt.setInt(1, postId);
+                        ResultSet rs = checkPstmt.executeQuery();
+
+                        if (!rs.next()) {
+                            System.out.println("해당 게시물이 존재하지 않습니다.");
+                            continue;
+                        }
+
+                        // 기존 게시물 정보 출력
+                        System.out.println("현재 게시물 정보:");
+                        System.out.println("제목: " + rs.getString("제목"));
+                        System.out.println("내용: " + rs.getString("내용"));
+                        System.out.println("작성일자: " + rs.getDate("작성일자"));
+                        System.out.println("-------------------------");
+
+                        // 새 게시물 정보 입력
+                        System.out.print("새 제목을 입력하세요 (현재 제목 유지하려면 엔터): ");
+                        String newTitle = scanner.nextLine();
+
+                        System.out.print("새 내용을 입력하세요 (현재 내용 유지하려면 엔터): ");
+                        String newContent = scanner.nextLine();
+
+                        // 게시물 수정 쿼리
+                        String updateQuery = "UPDATE 게시물 SET 제목 = ?, 내용 = ?, 작성일자 = NOW() WHERE 게시물id = ?";
+                        try (PreparedStatement updatePstmt = con.prepareStatement(updateQuery)) {
+                            // 제목과 내용 수정 (엔터 입력 시 기존 값 유지)
+                            if (newTitle.isEmpty()) {
+                                newTitle = rs.getString("제목"); // 기존 제목
+                            }
+                            if (newContent.isEmpty()) {
+                                newContent = rs.getString("내용"); // 기존 내용
+                            }
+
+                            // 쿼리 매개변수 설정
+                            updatePstmt.setString(1, newTitle);
+                            updatePstmt.setString(2, newContent);
+                            updatePstmt.setInt(3, postId);
+
+                            // 게시물 수정 실행
+                            int rowsUpdated = updatePstmt.executeUpdate();
+                            if (rowsUpdated > 0) {
+                                System.out.println("게시물이 성공적으로 수정되었습니다!");
+                            } else {
+                                System.out.println("게시물 수정에 실패했습니다.");
+                            }
+                        }
+                    } catch (SQLException e) {
+                        System.out.println("게시물 수정 중 오류가 발생했습니다: " + e.getMessage());
+                    }
+                }
+
+                else if (option == 12) { // 게시물 삭제
                     System.out.println("\n--- 게시물 삭제 ---");
                     scanner.nextLine(); // 버퍼 비우기
 
@@ -654,7 +714,7 @@ public class Main {
                     }
                 }
 
-                else if (option == 12) { // 댓글 수정
+                else if (option == 13) { // 댓글 수정
                     System.out.println("\n--- 댓글 수정 ---");
                     scanner.nextLine();
                     System.out.print("댓글 작성자의 이름을 입력하세요: ");
@@ -702,7 +762,7 @@ public class Main {
                     }
                 }
 
-                else if (option == 13) { // 댓글 삭제
+                else if (option == 14) { // 댓글 삭제
                     System.out.println("\n--- 댓글 삭제 ---");
                     scanner.nextLine();
                     System.out.print("댓글 작성자의 이름을 입력하세요: ");
@@ -746,7 +806,7 @@ public class Main {
                     }
                 }
 
-                else if (option == 14) { // 일정 검색
+                else if (option == 15) { // 일정 검색
                     System.out.println("\n--- 일정 검색 ---");
                     scanner.nextLine();
                     System.out.print("검색할 동아리명을 입력하세요: ");
