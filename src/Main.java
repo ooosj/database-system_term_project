@@ -18,7 +18,8 @@ public class Main {
                 System.out.println("5. 학생 정보 검색  6. 학생 추가");
                 System.out.println("7. 학생 정보 수정  8. 학생 정보 삭제");
                 System.out.println("9. 게시물 검색  10. 게시물 추가");
-                System.out.println("11. 게시물 삭제");
+                System.out.println("11. 게시물 삭제  12. 댓글 수정");
+                System.out.println("13. 댓글 삭제");
 
 
                 System.out.println("99. 종료");
@@ -435,55 +436,109 @@ public class Main {
                     int searchOption = scanner.nextInt();
                     scanner.nextLine(); // 버퍼 비우기
 
+                    String query = "";
                     if (searchOption == 1) {
-                        System.out.print("검색할 제목을 입력하세요: ");
-                        String title = scanner.nextLine();
+                        System.out.print("검색할 제목 키워드를 입력하세요: ");
 
-                        // 게시물과 사용자 테이블을 JOIN하여 작성자 이름을 가져옴
-                        String query = "SELECT b.게시물id, b.제목, b.내용, b.작성일자, u.이름 AS 작성자, c.동아리명 AS 동아리명 " +
+                        query = "SELECT b.게시물id, b.제목, b.내용, b.작성일자, u.이름 AS 작성자, c.동아리명 AS 동아리명 " +
                                 "FROM 게시물 b " +
                                 "JOIN 사용자 u ON b.사용자id = u.사용자id " +
                                 "JOIN 동아리 c ON b.동아리id = c.동아리id " +
                                 "WHERE b.제목 LIKE ?";
-
-                        try (PreparedStatement pstmt = con.prepareStatement(query)) {
-                            pstmt.setString(1, "%" + title + "%");
-                            ResultSet rs = pstmt.executeQuery();
-
-                            while (rs.next()) {
-                                System.out.println("게시물ID: " + rs.getInt("게시물id"));
-                                System.out.println("제목: " + rs.getString("제목"));
-                                System.out.println("내용: " + rs.getString("내용"));
-                                System.out.println("작성일자: " + rs.getDate("작성일자"));
-                                System.out.println("작성자: " + rs.getString("작성자")); // 작성자 이름 출력
-                                System.out.println("동아리명: " + rs.getString("동아리명"));
-                                System.out.println("-------------------------");
-                            }
-                        } catch (SQLException e) {
-                            System.out.println("게시물 검색 중 오류가 발생했습니다: " + e.getMessage());
-                        }
-                    }
-                    else if (searchOption == 2) {
+                    } else if (searchOption == 2) {
                         System.out.print("검색할 작성자 이름을 입력하세요: ");
-                        String authorName = scanner.nextLine();
-                        String query = "SELECT b.게시물id, b.제목, b.내용, b.작성일자, b.동아리id, u.이름 AS 작성자 " +
-                                "FROM 게시물 b JOIN 사용자 u ON b.사용자id = u.사용자id " +
+
+                        query = "SELECT b.게시물id, b.제목, b.내용, b.작성일자, u.이름 AS 작성자, c.동아리명 AS 동아리명 " +
+                                "FROM 게시물 b " +
+                                "JOIN 사용자 u ON b.사용자id = u.사용자id " +
+                                "JOIN 동아리 c ON b.동아리id = c.동아리id " +
                                 "WHERE u.이름 LIKE ?";
-                        try (PreparedStatement pstmt = con.prepareStatement(query)) {
-                            pstmt.setString(1, "%" + authorName + "%");
-                            ResultSet rs = pstmt.executeQuery();
-                            while (rs.next()) {
-                                System.out.println("게시물ID: " + rs.getInt("게시물id"));
-                                System.out.println("제목: " + rs.getString("제목"));
-                                System.out.println("내용: " + rs.getString("내용"));
-                                System.out.println("작성일자: " + rs.getDate("작성일자"));
-                                System.out.println("작성자: " + rs.getString("작성자"));
-                                System.out.println("동아리ID: " + rs.getInt("동아리id"));
-                                System.out.println("-------------------------");
+                    }
+
+                    try (PreparedStatement pstmt = con.prepareStatement(query)) {
+
+                        String keyword = scanner.nextLine();
+                        pstmt.setString(1, "%" + keyword + "%");
+
+                        ResultSet rs = pstmt.executeQuery();
+
+                        while (rs.next()) {
+                            int 게시물id = rs.getInt("게시물id");
+                            System.out.println("게시물ID: " + 게시물id);
+                            System.out.println("제목: " + rs.getString("제목"));
+                            System.out.println("내용: " + rs.getString("내용"));
+                            System.out.println("작성일자: " + rs.getDate("작성일자"));
+                            System.out.println("작성자: " + rs.getString("작성자"));
+                            System.out.println("동아리명: " + rs.getString("동아리명"));
+                            System.out.println("-------------------------");
+
+                            // 댓글 표시 (해당 게시물의 댓글만 표시)
+                            System.out.println("=== 댓글 ===");
+                            String commentQuery = "SELECT c.댓글id, c.내용, c.작성일자, u.이름 AS 작성자 " +
+                                    "FROM 댓글 c " +
+                                    "JOIN 사용자 u ON c.사용자id = u.사용자id " +
+                                    "WHERE c.게시물id = ?";
+                            try (PreparedStatement commentPstmt = con.prepareStatement(commentQuery)) {
+                                commentPstmt.setInt(1, 게시물id);
+                                ResultSet commentRs = commentPstmt.executeQuery();
+                                boolean hasComments = false;
+                                while (commentRs.next()) {
+                                    hasComments = true;
+                                    System.out.println("댓글ID: " + commentRs.getInt("댓글id"));
+                                    System.out.println("내용: " + commentRs.getString("내용"));
+                                    System.out.println("작성일자: " + commentRs.getDate("작성일자"));
+                                    System.out.println("작성자: " + commentRs.getString("작성자"));
+                                    System.out.println("-------------------------");
+                                }
+                                if (!hasComments) {
+                                    System.out.println("댓글이 없습니다.");
+                                }
+                            }
+
+                            // 댓글 작성
+                            System.out.print("이 게시물에 댓글을 작성하시겠습니까? (Y/N): ");
+                            String writeComment = scanner.nextLine();
+                            if (writeComment.equalsIgnoreCase("Y")) {
+                                System.out.print("작성자 이름을 입력하세요: ");
+                                String commenterName = scanner.nextLine();
+
+                                System.out.print("댓글 내용을 입력하세요: ");
+                                String commentContent = scanner.nextLine();
+
+                                // 작성자의 ID 가져오기
+                                String userIdQuery = "SELECT 사용자id FROM 사용자 WHERE 이름 = ?";
+                                try (PreparedStatement userIdPstmt = con.prepareStatement(userIdQuery)) {
+                                    userIdPstmt.setString(1, commenterName);
+                                    ResultSet userIdRs = userIdPstmt.executeQuery();
+                                    if (userIdRs.next()) {
+                                        int userId = userIdRs.getInt("사용자id");
+
+                                        // 댓글 삽입
+                                        String insertCommentQuery = "INSERT INTO 댓글 (게시물id, 사용자id, 내용, 작성일자) VALUES (?, ?, ?, NOW())";
+                                        try (PreparedStatement insertPstmt = con.prepareStatement(insertCommentQuery)) {
+                                            insertPstmt.setInt(1, 게시물id);
+                                            insertPstmt.setInt(2, userId);
+                                            insertPstmt.setString(3, commentContent);
+
+                                            int rowsInserted = insertPstmt.executeUpdate();
+                                            if (rowsInserted > 0) {
+                                                System.out.println("댓글이 성공적으로 추가되었습니다!");
+                                            } else {
+                                                System.out.println("댓글 추가에 실패했습니다.");
+                                            }
+                                        }
+                                    } else {
+                                        System.out.println("존재하지 않는 사용자입니다. 댓글 추가에 실패했습니다.");
+                                    }
+                                }
                             }
                         }
+                    } catch (SQLException e) {
+                        System.out.println("게시물 검색 중 오류가 발생했습니다: " + e.getMessage());
                     }
                 }
+
+
 
                 else if (option == 10) { // 게시물 추가
                     System.out.println("\n--- 게시물 추가 ---");
@@ -596,6 +651,98 @@ public class Main {
                         } else {
                             System.out.println("삭제할 게시물이 존재하지 않습니다.");
                         }
+                    }
+                }
+
+                else if (option == 12) { // 댓글 수정
+                    System.out.println("\n--- 댓글 수정 ---");
+                    scanner.nextLine();
+                    System.out.print("댓글 작성자의 이름을 입력하세요: ");
+                    String authorName = scanner.nextLine();
+
+                    String query = "SELECT c.댓글id, c.내용, c.작성일자, b.제목 AS 게시물제목, u.이름 AS 작성자 " +
+                            "FROM 댓글 c " +
+                            "JOIN 사용자 u ON c.사용자id = u.사용자id " +
+                            "JOIN 게시물 b ON c.게시물id = b.게시물id " +
+                            "WHERE u.이름 = ?";
+                    try (PreparedStatement pstmt = con.prepareStatement(query)) {
+                        pstmt.setString(1, authorName);
+                        ResultSet rs = pstmt.executeQuery();
+
+                        System.out.println("=== 댓글 목록 ===");
+                        while (rs.next()) {
+                            System.out.println("댓글ID: " + rs.getInt("댓글id"));
+                            System.out.println("게시물 제목: " + rs.getString("게시물제목"));
+                            System.out.println("내용: " + rs.getString("내용"));
+                            System.out.println("작성일자: " + rs.getDate("작성일자"));
+                            System.out.println("-------------------------");
+                        }
+
+                        System.out.print("수정할 댓글의 ID를 입력하세요: ");
+                        int commentId = scanner.nextInt();
+                        scanner.nextLine(); // 버퍼 비우기
+
+                        System.out.print("새로운 댓글 내용을 입력하세요: ");
+                        String newContent = scanner.nextLine();
+
+                        String updateQuery = "UPDATE 댓글 SET 내용 = ? WHERE 댓글id = ?";
+                        try (PreparedStatement updatePstmt = con.prepareStatement(updateQuery)) {
+                            updatePstmt.setString(1, newContent);
+                            updatePstmt.setInt(2, commentId);
+
+                            int rowsUpdated = updatePstmt.executeUpdate();
+                            if (rowsUpdated > 0) {
+                                System.out.println("댓글이 성공적으로 수정되었습니다!");
+                            } else {
+                                System.out.println("댓글 수정에 실패했습니다.");
+                            }
+                        }
+                    } catch (SQLException e) {
+                        System.out.println("댓글 수정 중 오류가 발생했습니다: " + e.getMessage());
+                    }
+                }
+
+                else if (option == 13) { // 댓글 삭제
+                    System.out.println("\n--- 댓글 삭제 ---");
+                    scanner.nextLine();
+                    System.out.print("댓글 작성자의 이름을 입력하세요: ");
+                    String authorName = scanner.nextLine();
+
+                    String query = "SELECT c.댓글id, c.내용, c.작성일자, b.제목 AS 게시물제목, u.이름 AS 작성자 " +
+                            "FROM 댓글 c " +
+                            "JOIN 사용자 u ON c.사용자id = u.사용자id " +
+                            "JOIN 게시물 b ON c.게시물id = b.게시물id " +
+                            "WHERE u.이름 = ?";
+                    try (PreparedStatement pstmt = con.prepareStatement(query)) {
+                        pstmt.setString(1, authorName);
+                        ResultSet rs = pstmt.executeQuery();
+
+                        System.out.println("=== 댓글 목록 ===");
+                        while (rs.next()) {
+                            System.out.println("댓글ID: " + rs.getInt("댓글id"));
+                            System.out.println("게시물 제목: " + rs.getString("게시물제목"));
+                            System.out.println("내용: " + rs.getString("내용"));
+                            System.out.println("작성일자: " + rs.getDate("작성일자"));
+                            System.out.println("-------------------------");
+                        }
+
+                        System.out.print("삭제할 댓글의 ID를 입력하세요: ");
+                        int commentId = scanner.nextInt();
+                        scanner.nextLine(); // 버퍼 비우기
+
+                        String deleteQuery = "DELETE FROM 댓글 WHERE 댓글id = ?";
+                        try (PreparedStatement deletePstmt = con.prepareStatement(deleteQuery)) {
+                            deletePstmt.setInt(1, commentId);
+
+                            int rowsDeleted = deletePstmt.executeUpdate();
+                            if (rowsDeleted > 0) {
+                                System.out.println("댓글이 성공적으로 삭제되었습니다!");
+                            } else {
+                                System.out.println("댓글 삭제에 실패했습니다.");
+                            }
+                        }
+                    } catch (SQLException e) {
+                        System.out.println("댓글 삭제 중 오류가 발생했습니다: " + e.getMessage());
                     }
                 }
 
