@@ -18,7 +18,7 @@ public class Main {
                 System.out.println("5. 학생 정보 검색  6. 학생 추가");
                 System.out.println("7. 학생 정보 수정  8. 학생 정보 삭제");
                 System.out.println("9. 게시물 검색  10. 게시물 추가");
-                System.out.println("11. 게시물 수정  12. 게시물 삭제");
+                System.out.println("11. 게시물 삭제");
 
 
                 System.out.println("99. 종료");
@@ -438,21 +438,32 @@ public class Main {
                     if (searchOption == 1) {
                         System.out.print("검색할 제목을 입력하세요: ");
                         String title = scanner.nextLine();
-                        String query = "SELECT 게시물id, 제목, 내용, 작성일자, 사용자id, 동아리id FROM 게시물 WHERE 제목 LIKE ?";
+
+                        // 게시물과 사용자 테이블을 JOIN하여 작성자 이름을 가져옴
+                        String query = "SELECT b.게시물id, b.제목, b.내용, b.작성일자, u.이름 AS 작성자, c.동아리명 AS 동아리명 " +
+                                "FROM 게시물 b " +
+                                "JOIN 사용자 u ON b.사용자id = u.사용자id " +
+                                "JOIN 동아리 c ON b.동아리id = c.동아리id " +
+                                "WHERE b.제목 LIKE ?";
+
                         try (PreparedStatement pstmt = con.prepareStatement(query)) {
                             pstmt.setString(1, "%" + title + "%");
                             ResultSet rs = pstmt.executeQuery();
+
                             while (rs.next()) {
                                 System.out.println("게시물ID: " + rs.getInt("게시물id"));
                                 System.out.println("제목: " + rs.getString("제목"));
                                 System.out.println("내용: " + rs.getString("내용"));
                                 System.out.println("작성일자: " + rs.getDate("작성일자"));
-                                System.out.println("작성자ID: " + rs.getInt("사용자id"));
-                                System.out.println("동아리ID: " + rs.getInt("동아리id"));
+                                System.out.println("작성자: " + rs.getString("작성자")); // 작성자 이름 출력
+                                System.out.println("동아리명: " + rs.getString("동아리명"));
                                 System.out.println("-------------------------");
                             }
+                        } catch (SQLException e) {
+                            System.out.println("게시물 검색 중 오류가 발생했습니다: " + e.getMessage());
                         }
-                    } else if (searchOption == 2) {
+                    }
+                    else if (searchOption == 2) {
                         System.out.print("검색할 작성자 이름을 입력하세요: ");
                         String authorName = scanner.nextLine();
                         String query = "SELECT b.게시물id, b.제목, b.내용, b.작성일자, b.동아리id, u.이름 AS 작성자 " +
